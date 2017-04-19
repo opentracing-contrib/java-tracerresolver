@@ -48,6 +48,7 @@ public abstract class TracerResolver {
      */
     public static Tracer resolveTracer() {
         if (resolved == null) {
+            // TODO error handling?
             for (TracerResolver resolver : RESOLVERS) {
                 Tracer tracer = resolver.resolve();
                 if (tracer != null) {
