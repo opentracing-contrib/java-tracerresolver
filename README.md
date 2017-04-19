@@ -6,15 +6,14 @@ Resolver API for OpenTracing Tracer implementations.
 
 ## TracerResolver
 
-This is both an abstract Service definition declaring an abstract `resolve()` method and a
-static lookup utility that provides a static `resolveTracer()` method 
-that uses the [JDK ServiceLoader][serviceloader]
+This is both an abstract Service definition declaring a `resolve()` method to be implemented
+and a utility class providing a static `resolveTracer()` method using the [JDK ServiceLoader][serviceloader]
 to find declared `TracerResolver` implementations to resolve a Tracer.
 
 ## Fallback resolver
 
 If no resolver is found, a [ServiceLoader lookup][serviceloader] for a declared 
-`Tracer` implementation is used as fallback resolver.
+`Tracer` class is used as _fallback_ resolver.
 
   [ci-img]: https://img.shields.io/travis/opentracing-contrib/java-tracerresolver/master.svg
   [ci]: https://travis-ci.org/opentracing-contrib/java-tracerresolver
