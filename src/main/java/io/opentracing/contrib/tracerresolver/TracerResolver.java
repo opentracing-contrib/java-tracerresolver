@@ -30,7 +30,7 @@ public abstract class TracerResolver {
     private static final ServiceLoader<TracerResolver> RESOLVERS = ServiceLoader.load(TracerResolver.class);
     private static final ServiceLoader<Tracer> FALLBACK = ServiceLoader.load(Tracer.class);
 
-    private static Tracer resolved = null;
+    private static Tracer resolved = null; // [ST] I'm still in doubt whether the resolved result should be cached or not!
 
     /**
      * Resolves the {@link Tracer} implementation.
