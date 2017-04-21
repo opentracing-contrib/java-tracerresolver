@@ -18,6 +18,8 @@ package io.opentracing.contrib.tracerresolver;
 import io.opentracing.Tracer;
 
 import java.util.ServiceLoader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * {@code TracerResolver} API definition looks for one or more registered {@link TracerResolver} implementations
@@ -27,10 +29,9 @@ import java.util.ServiceLoader;
  * {@link ServiceLoader} lookup of the {@link Tracer} service itself.
  */
 public abstract class TracerResolver {
+    private static final Logger LOGGER = Logger.getLogger(TracerResolver.class.getName());
     private static final ServiceLoader<TracerResolver> RESOLVERS = ServiceLoader.load(TracerResolver.class);
     private static final ServiceLoader<Tracer> FALLBACK = ServiceLoader.load(Tracer.class);
-
-    private static Tracer resolved = null; // [ST] I'm still in doubt whether the resolved result should be cached or not!
 
     /**
      * Resolves the {@link Tracer} implementation.
@@ -47,29 +48,34 @@ public abstract class TracerResolver {
      * @return The resolved Tracer or {@code null} if none was resolved.
      */
     public static Tracer resolveTracer() {
-        if (resolved == null) {
-            // TODO error handling?
-            for (TracerResolver resolver : RESOLVERS) {
+        for (TracerResolver resolver : RESOLVERS) {
+            try {
                 Tracer tracer = resolver.resolve();
                 if (tracer != null) {
-                    resolved = tracer;
-                    return resolved;
+                    LOGGER.log(Level.FINER, "Resolved tracer: {0}.", tracer);
+                    return tracer;
                 }
-            }
-            for (Tracer tracer : FALLBACK) {
-                if (tracer != null) {
-                    resolved = tracer;
-                    break;
-                }
+            } catch (RuntimeException rte) {
+                LOGGER.log(Level.WARNING, "Error resolving tracer using " + resolver + ": " + rte.getMessage(), rte);
             }
         }
-        return resolved;
+        for (Tracer tracer : FALLBACK) {
+            if (tracer != null) {
+                LOGGER.log(Level.FINER, "Resolved tracer: {0}.", tracer);
+                return tracer;
+            }
+        }
+        LOGGER.log(Level.FINEST, "No tracer was resolved.");
+        return null;
     }
 
-    public static void reset() {
+    /**
+     * Reloads the lazily found {@linkplain TracerResolver resolvers} and the fallback resolver.
+     */
+    public static void reload() {
         RESOLVERS.reload();
         FALLBACK.reload();
-        resolved = null;
+        LOGGER.log(Level.FINER, "Resolvers were reloaded.");
     }
 
 }
