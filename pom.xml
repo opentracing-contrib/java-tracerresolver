@@ -82,7 +82,7 @@
     <distributionManagement>
         <repository>
             <id>bintray</id>
-            <url>https://api.bintray.com/maven/opentracing/maven/java-tracerresolver/;publish=1</url>
+            <url>https://api.bintray.com/maven/opentracing/maven/opentracing-tracerresolver/;publish=1</url>
         </repository>
         <snapshotRepository>
             <id>jfrog-snapshots</id>
@@ -195,7 +195,7 @@
                 <configuration>
                     <subject>opentracing</subject>
                     <repo>maven</repo>
-                    <packageName>java-tracerresolver</packageName>
+                    <packageName>opentracing-tracerresolver</packageName>
                 </configuration>
             </plugin>
         </plugins>
