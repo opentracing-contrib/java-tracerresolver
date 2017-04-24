@@ -54,6 +54,19 @@ public class TracerResolverTest {
         assertThat(TracerResolver.resolveTracer(), is(instanceOf(TestTracerResolver.TestTracer.class)));
     }
 
+    @Test
+    public void testResolveTracer_withFallbackPresent() throws IOException {
+        File fallbackFile = new File(TRACERRESOLVER_SERVICE_FILE.getParentFile(), Tracer.class.getName());
+        try { // Even with a fallback service file, the resolver should be preferred.
+            ServiceFileUtil.writeServiceFile(fallbackFile, FallbackTracer.class.getName());
+
+            assertThat(TracerResolver.resolveTracer(), is(instanceOf(TestTracerResolver.TestTracer.class)));
+
+        } finally {
+            fallbackFile.delete();
+        }
+    }
+
     public static class TestTracerResolver extends TracerResolver {
         private static class TestTracer extends MockTracer {
         }
@@ -64,4 +77,6 @@ public class TracerResolverTest {
         }
     }
 
+    public static class FallbackTracer extends MockTracer {
+    }
 }
