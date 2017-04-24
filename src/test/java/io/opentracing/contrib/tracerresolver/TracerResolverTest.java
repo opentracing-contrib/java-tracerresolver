@@ -36,8 +36,8 @@ public class TracerResolverTest {
 
     @After
     public void cleanServiceFiles() throws IOException {
-        if (TRACER_SERVICE_FILE.isFile()) TRACER_SERVICE_FILE.delete();
         if (TRACERRESOLVER_SERVICE_FILE.isFile()) TRACERRESOLVER_SERVICE_FILE.delete();
+        if (TRACER_SERVICE_FILE.isFile()) TRACER_SERVICE_FILE.delete();
     }
 
     @Before
@@ -47,9 +47,8 @@ public class TracerResolverTest {
     }
 
     @Test
-    public void testResolveFallback() throws IOException {
-        writeServiceFile(TRACER_SERVICE_FILE, Mocks.FallbackTracer.class.getName());
-        assertThat(TracerResolver.resolveTracer(), is(instanceOf(Mocks.FallbackTracer.class)));
+    public void testNothingRegistered() throws IOException {
+        assertThat(TracerResolver.resolveTracer(), is(nullValue()));
     }
 
     @Test
@@ -59,8 +58,16 @@ public class TracerResolverTest {
     }
 
     @Test
-    public void testNothingRegistered() throws IOException {
-        assertThat(TracerResolver.resolveTracer(), is(nullValue()));
+    public void testResolveFallback() throws IOException {
+        writeServiceFile(TRACER_SERVICE_FILE, Mocks.FallbackTracer.class.getName());
+        assertThat(TracerResolver.resolveTracer(), is(instanceOf(Mocks.FallbackTracer.class)));
+    }
+
+    @Test
+    public void testResolverBeatsFallback() throws IOException {
+        writeServiceFile(TRACER_SERVICE_FILE, Mocks.FallbackTracer.class.getName());
+        writeServiceFile(TRACERRESOLVER_SERVICE_FILE, Mocks.MockTracerResolver.class.getName());
+        assertThat(TracerResolver.resolveTracer(), is(instanceOf(Mocks.ResolvedTracer.class)));
     }
 
     @Test
