@@ -16,31 +16,33 @@
 package io.opentracing.contrib.tracerresolver;
 
 import io.opentracing.Tracer;
-import io.opentracing.mock.MockTracer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
 public class TracerResolverTest {
-
     private static final File TRACERRESOLVER_SERVICE_FILE =
             new File("target/test-classes/META-INF/services/" + TracerResolver.class.getName());
+    private static final File TRACER_SERVICE_FILE =
+            new File("target/test-classes/META-INF/services/" + Tracer.class.getName());
 
     @Before
     public void prepareClasspath() throws IOException {
-        ServiceFileUtil.writeServiceFile(TRACERRESOLVER_SERVICE_FILE, TestTracerResolver.class.getName());
+        writeServiceFile(TRACER_SERVICE_FILE, Mocks.FallbackTracer.class.getName());
     }
 
     @After
     public void restoreClasspath() throws IOException {
-        TRACERRESOLVER_SERVICE_FILE.delete();
+        if (TRACER_SERVICE_FILE.isFile()) TRACER_SERVICE_FILE.delete();
+        if (TRACERRESOLVER_SERVICE_FILE.isFile()) TRACERRESOLVER_SERVICE_FILE.delete();
     }
 
     @Before
@@ -50,33 +52,44 @@ public class TracerResolverTest {
     }
 
     @Test
-    public void testResolveTracer() {
-        assertThat(TracerResolver.resolveTracer(), is(instanceOf(TestTracerResolver.TestTracer.class)));
+    public void testResolveFallback() {
+        assertThat(TracerResolver.resolveTracer(), is(instanceOf(Mocks.FallbackTracer.class)));
     }
 
     @Test
-    public void testResolveTracer_withFallbackPresent() throws IOException {
-        File fallbackFile = new File(TRACERRESOLVER_SERVICE_FILE.getParentFile(), Tracer.class.getName());
-        try { // Even with a fallback service file, the resolver should be preferred.
-            ServiceFileUtil.writeServiceFile(fallbackFile, FallbackTracer.class.getName());
+    public void testResolveTracer() throws IOException {
+        writeServiceFile(TRACERRESOLVER_SERVICE_FILE, Mocks.MockTracerResolver.class.getName());
+        assertThat(TracerResolver.resolveTracer(), is(instanceOf(Mocks.ResolvedTracer.class)));
+    }
 
-            assertThat(TracerResolver.resolveTracer(), is(instanceOf(TestTracerResolver.TestTracer.class)));
+    @Test
+    public void testFallbackWhenResolvingNull() throws IOException {
+        writeServiceFile(TRACERRESOLVER_SERVICE_FILE, Mocks.NullTracerResolver.class.getName());
+        assertThat(TracerResolver.resolveTracer(), is(instanceOf(Mocks.FallbackTracer.class)));
+    }
 
+    @Test
+    public void testNothingRegistered() throws IOException {
+        TRACER_SERVICE_FILE.delete();
+        assertThat(TracerResolver.resolveTracer(), is(nullValue()));
+    }
+
+    @Test
+    public void testResolvingNullWithoutFallback() throws IOException {
+        TRACER_SERVICE_FILE.delete();
+        writeServiceFile(TRACERRESOLVER_SERVICE_FILE, Mocks.NullTracerResolver.class.getName());
+        assertThat(TracerResolver.resolveTracer(), is(nullValue()));
+    }
+
+    private static void writeServiceFile(File serviceFile, String content) throws IOException {
+        serviceFile.getParentFile().mkdirs();
+        if (serviceFile.isFile()) serviceFile.delete();
+        PrintWriter writer = new PrintWriter(new FileWriter(serviceFile));
+        try {
+            writer.println(content);
         } finally {
-            fallbackFile.delete();
+            writer.close();
         }
     }
 
-    public static class TestTracerResolver extends TracerResolver {
-        private static class TestTracer extends MockTracer {
-        }
-
-        @Override
-        protected Tracer resolve() {
-            return new TestTracer();
-        }
-    }
-
-    public static class FallbackTracer extends MockTracer {
-    }
 }
