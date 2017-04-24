@@ -34,13 +34,8 @@ public class TracerResolverTest {
     private static final File TRACER_SERVICE_FILE =
             new File("target/test-classes/META-INF/services/" + Tracer.class.getName());
 
-    @Before
-    public void prepareClasspath() throws IOException {
-        writeServiceFile(TRACER_SERVICE_FILE, Mocks.FallbackTracer.class.getName());
-    }
-
     @After
-    public void restoreClasspath() throws IOException {
+    public void cleanServiceFiles() throws IOException {
         if (TRACER_SERVICE_FILE.isFile()) TRACER_SERVICE_FILE.delete();
         if (TRACERRESOLVER_SERVICE_FILE.isFile()) TRACERRESOLVER_SERVICE_FILE.delete();
     }
@@ -52,7 +47,8 @@ public class TracerResolverTest {
     }
 
     @Test
-    public void testResolveFallback() {
+    public void testResolveFallback() throws IOException {
+        writeServiceFile(TRACER_SERVICE_FILE, Mocks.FallbackTracer.class.getName());
         assertThat(TracerResolver.resolveTracer(), is(instanceOf(Mocks.FallbackTracer.class)));
     }
 
@@ -63,20 +59,19 @@ public class TracerResolverTest {
     }
 
     @Test
+    public void testNothingRegistered() throws IOException {
+        assertThat(TracerResolver.resolveTracer(), is(nullValue()));
+    }
+
+    @Test
     public void testFallbackWhenResolvingNull() throws IOException {
+        writeServiceFile(TRACER_SERVICE_FILE, Mocks.FallbackTracer.class.getName());
         writeServiceFile(TRACERRESOLVER_SERVICE_FILE, Mocks.NullTracerResolver.class.getName());
         assertThat(TracerResolver.resolveTracer(), is(instanceOf(Mocks.FallbackTracer.class)));
     }
 
     @Test
-    public void testNothingRegistered() throws IOException {
-        TRACER_SERVICE_FILE.delete();
-        assertThat(TracerResolver.resolveTracer(), is(nullValue()));
-    }
-
-    @Test
     public void testResolvingNullWithoutFallback() throws IOException {
-        TRACER_SERVICE_FILE.delete();
         writeServiceFile(TRACERRESOLVER_SERVICE_FILE, Mocks.NullTracerResolver.class.getName());
         assertThat(TracerResolver.resolveTracer(), is(nullValue()));
     }
