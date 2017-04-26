@@ -12,7 +12,7 @@ to find declared `TracerResolver` implementations to resolve a Tracer.
 
 ## Fallback resolver
 
-If no resolver is found, a [ServiceLoader lookup][serviceloader] for a declared 
+If no `Tracer` is resolved by any `TracerResolver`, a [ServiceLoader lookup][serviceloader] for a declared 
 `Tracer` class is used as _fallback_ resolver.
 
 ## Priority
