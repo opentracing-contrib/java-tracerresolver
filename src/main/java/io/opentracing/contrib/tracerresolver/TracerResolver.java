@@ -21,6 +21,8 @@ import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static io.opentracing.contrib.tracerresolver.PriorityComparator.prioritize;
+
 /**
  * {@code TracerResolver} API definition looks for one or more registered {@link TracerResolver} implementations
  * using the {@link ServiceLoader}.
@@ -50,7 +52,7 @@ public abstract class TracerResolver {
      * @return The resolved Tracer or {@code null} if none was resolved.
      */
     public static Tracer resolveTracer() {
-        for (TracerResolver resolver : RESOLVERS) {
+        for (TracerResolver resolver : prioritize(RESOLVERS)) {
             try {
                 Tracer tracer = resolver.resolve();
                 if (tracer != null) {
@@ -61,7 +63,7 @@ public abstract class TracerResolver {
                 LOGGER.log(Level.WARNING, "Error resolving tracer using " + resolver + ": " + rte.getMessage(), rte);
             }
         }
-        for (Tracer tracer : FALLBACK) {
+        for (Tracer tracer : prioritize(FALLBACK)) {
             if (tracer != null) {
                 LOGGER.log(Level.FINER, "Resolved tracer: {0}.", tracer);
                 return tracer;
