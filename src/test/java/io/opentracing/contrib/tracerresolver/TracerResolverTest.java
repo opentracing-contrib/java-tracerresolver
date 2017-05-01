@@ -80,13 +80,21 @@ public class TracerResolverTest {
         assertThat(TracerResolver.resolveTracer(), is(nullValue()));
     }
 
-    private static <SVC> void writeServiceFile(Class<SVC> service, Class<? extends SVC> implementation) throws IOException {
+    @Test
+    public void testSkipResolverThrowingException() throws IOException {
+        writeServiceFile(TracerResolver.class, Mocks.HighPriorityThrowingResolver.class, Mocks.MockTracerResolver.class);
+        assertThat(TracerResolver.resolveTracer(), is(instanceOf(Mocks.ResolvedTracer.class)));
+    }
+
+    static <SVC> void writeServiceFile(Class<SVC> service, Class<?>... implementations) throws IOException {
         SERVICES_DIR.mkdirs();
         File serviceFile = new File(SERVICES_DIR, service.getName());
         if (serviceFile.isFile()) serviceFile.delete();
         PrintWriter writer = new PrintWriter(new FileWriter(serviceFile));
         try {
-            writer.println(implementation.getName());
+            for (Class<?> implementation : implementations) {
+                writer.println(implementation.getName());
+            }
         } finally {
             writer.close();
         }

@@ -29,12 +29,15 @@ import static io.opentracing.contrib.tracerresolver.PriorityComparator.prioritiz
  * <p>
  * If no {@link TracerResolver} implementations are found, the {@link #resolveTracer()} method will fallback to
  * {@link ServiceLoader} lookup of the {@link Tracer} service itself.
+ * <p>
+ * Available {@link TracerConverter} implementations are applied to the resolved {@link Tracer} instance.
  *
  * @author Sjoerd Talsma
  */
 public abstract class TracerResolver {
     private static final Logger LOGGER = Logger.getLogger(TracerResolver.class.getName());
     private static final ServiceLoader<TracerResolver> RESOLVERS = ServiceLoader.load(TracerResolver.class);
+    private static final ServiceLoader<TracerConverter> CONVERTERS = ServiceLoader.load(TracerConverter.class);
     private static final ServiceLoader<Tracer> FALLBACK = ServiceLoader.load(Tracer.class);
 
     /**
@@ -54,19 +57,18 @@ public abstract class TracerResolver {
     public static Tracer resolveTracer() {
         for (TracerResolver resolver : prioritize(RESOLVERS)) {
             try {
-                Tracer tracer = resolver.resolve();
+                Tracer tracer = convert(resolver.resolve());
                 if (tracer != null) {
-                    LOGGER.log(Level.FINER, "Resolved tracer: {0}.", tracer);
-                    return tracer;
+                    return logResolved(tracer);
                 }
             } catch (RuntimeException rte) {
                 LOGGER.log(Level.WARNING, "Error resolving tracer using " + resolver + ": " + rte.getMessage(), rte);
             }
         }
         for (Tracer tracer : prioritize(FALLBACK)) {
+            tracer = convert(tracer);
             if (tracer != null) {
-                LOGGER.log(Level.FINER, "Resolved tracer: {0}.", tracer);
-                return tracer;
+                return logResolved(tracer);
             }
         }
         LOGGER.log(Level.FINEST, "No tracer was resolved.");
@@ -78,8 +80,30 @@ public abstract class TracerResolver {
      */
     public static void reload() {
         RESOLVERS.reload();
+        CONVERTERS.reload();
         FALLBACK.reload();
-        LOGGER.log(Level.FINER, "Resolvers were reloaded.");
+        LOGGER.log(Level.FINER, "Tracer resolvers were reloaded.");
+    }
+
+    private static Tracer convert(Tracer resolved) {
+        if (resolved != null) {
+            for (TracerConverter converter : prioritize(CONVERTERS)) {
+                try {
+                    Tracer converted = converter.convert(resolved);
+                    LOGGER.log(Level.FINEST, "Converted {0} using {1}: {2}.", new Object[]{resolved, converter, converted});
+                    resolved = converted;
+                } catch (RuntimeException rte) {
+                    LOGGER.log(Level.WARNING, "Error converting " + resolved + " with " + converter + ": " + rte.getMessage(), rte);
+                }
+                if (resolved == null) break;
+            }
+        }
+        return resolved;
+    }
+
+    private static Tracer logResolved(Tracer resolvedTracer) {
+        LOGGER.log(Level.FINER, "Resolved tracer: {0}.", resolvedTracer);
+        return resolvedTracer;
     }
 
 }

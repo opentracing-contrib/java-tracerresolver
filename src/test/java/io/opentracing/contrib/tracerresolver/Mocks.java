@@ -18,7 +18,12 @@ package io.opentracing.contrib.tracerresolver;
 import io.opentracing.Tracer;
 import io.opentracing.mock.MockTracer;
 
+import javax.annotation.Priority;
+import java.util.ArrayList;
+import java.util.List;
+
 public final class Mocks {
+    static final List<Class<?>> calledConverterTypes = new ArrayList<Class<?>>();
 
     public static class FallbackTracer extends MockTracer {
     }
@@ -36,6 +41,40 @@ public final class Mocks {
     public static class NullTracerResolver extends TracerResolver {
         @Override
         protected Tracer resolve() {
+            return null;
+        }
+    }
+
+    @Priority(1)
+    public static class HighPriorityThrowingResolver extends TracerResolver {
+        @Override
+        protected Tracer resolve() {
+            throw new IllegalStateException("Can't resolve tracer (missing configuration?)");
+        }
+    }
+
+    public static class IdentityConverter implements TracerConverter {
+        @Override
+        public Tracer convert(Tracer existingTracer) {
+            calledConverterTypes.add(getClass());
+            return existingTracer;
+        }
+    }
+
+    @Priority(5)
+    public static class Prio5_ThrowingConverter implements TracerConverter {
+        @Override
+        public Tracer convert(Tracer existingTracer) {
+            calledConverterTypes.add(getClass());
+            throw new UnsupportedOperationException("Conversion of " + existingTracer + " not supported.");
+        }
+    }
+
+    @Priority(10)
+    public static class Prio10_ConvertToNull implements TracerConverter {
+        @Override
+        public Tracer convert(Tracer existingTracer) {
+            calledConverterTypes.add(getClass());
             return null;
         }
     }

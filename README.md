@@ -15,9 +15,22 @@ to find declared `TracerResolver` implementations to resolve a Tracer.
 If no `Tracer` is resolved by any `TracerResolver`, a [ServiceLoader lookup][serviceloader] for a declared 
 `Tracer` class is used as _fallback_ resolver.
 
+## Tracer converters
+
+Each resolved tracer is passed to _all_ `TracerConverter` instances that were found.
+
+A tracer converter can be useful for _automatically wrapping_ the resolved `Tracer`:
+```java
+public final class FooWrapperConverter implements TracerConverter {
+    public Tracer convert(Tracer existingTracer) {
+        return new FooTracerWrapper(existingTracer);
+    }
+}
+```
+
 ## Priority
 
-If multiple `TracerResolver` or `Tracer` implementations are found,
+If multiple `TracerResolver`, `TracerConverter` or `Tracer` implementations are found,
 they are checked for presence of the [`@Priority`][priority] annotation 
 on their class or superclasses. 
 The priority is applied as follows:
@@ -27,6 +40,7 @@ The priority is applied as follows:
  3. Finally, negative priority is applied in reverse-natural order (e.g. `-1`, `-2`, `-3`, ...).
 
 The order of objects with equal (implicit) priority is undefined.
+
 
   [ci-img]: https://img.shields.io/travis/opentracing-contrib/java-tracerresolver/master.svg
   [ci]: https://travis-ci.org/opentracing-contrib/java-tracerresolver
