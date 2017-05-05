@@ -10,16 +10,16 @@ This is both an abstract Service definition declaring a `resolve()` method to be
 and a utility class providing a static `resolveTracer()` method using the [JDK ServiceLoader][serviceloader]
 to find declared `TracerResolver` implementations to resolve a Tracer.
 
-## Fallback resolver
+## Fallback lookup
 
-If no `Tracer` is resolved by any `TracerResolver`, a [ServiceLoader lookup][serviceloader] for a declared 
-`Tracer` class is used as _fallback_ resolver.
+If no `TracerResolver` is found or no `Tracer` is returned, a [ServiceLoader lookup][serviceloader] for a declared 
+`Tracer` class is used as _fallback_.
 
 ## Tracer converters
 
-Each resolved tracer is passed to _all_ `TracerConverter` instances that were found.
+A resolved tracer is passed to _all_ `TracerConverter` instances that were found.
 
-A tracer converter can be useful for _automatically wrapping_ the resolved `Tracer`:
+Tracer converters can be useful for _automatically wrapping_ the resolved `Tracer`:
 ```java
 public final class FooWrapperConverter implements TracerConverter {
     public Tracer convert(Tracer existingTracer) {
