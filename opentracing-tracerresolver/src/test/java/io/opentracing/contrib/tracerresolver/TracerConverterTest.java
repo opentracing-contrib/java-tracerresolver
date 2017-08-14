@@ -15,12 +15,16 @@
  */
 package io.opentracing.contrib.tracerresolver;
 
+import io.opentracing.NoopTracerFactory;
+import io.opentracing.mock.MockTracer;
+import io.opentracing.util.GlobalTracer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 
 import static io.opentracing.contrib.tracerresolver.TracerResolverTest.writeServiceFile;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -29,6 +33,9 @@ import static org.hamcrest.Matchers.*;
 public class TracerConverterTest {
     private static final File SERVICES_DIR = new File("target/test-classes/META-INF/services/");
 
+    /**
+     * Clean up any service files we may have created during our tests.
+     */
     @After
     public void cleanServiceFiles() throws IOException {
         new File(SERVICES_DIR, TracerResolver.class.getName()).delete();
@@ -40,6 +47,18 @@ public class TracerConverterTest {
     public void resetTracerResolver() {
         Mocks.calledConverterTypes.clear();
         TracerResolver.reload();
+    }
+
+    /**
+     * If a GlobalTracer is registered, converters are not applied.
+     * To test this, the globaltracer needs to be cleared before and after the tests.
+     */
+    @Before
+    @After
+    public void clearGlobalTracer() throws NoSuchFieldException, IllegalAccessException {
+        Field globalTracer = GlobalTracer.class.getDeclaredField("tracer");
+        globalTracer.setAccessible(true);
+        globalTracer.set(null, NoopTracerFactory.create());
     }
 
     @Test
@@ -90,4 +109,13 @@ public class TracerConverterTest {
         assertThat("Prioritized converter", Mocks.calledConverterTypes, contains((Class) Mocks.Prio10_ConvertToNull.class));
     }
 
+    @Test
+    public void testConvertersIgnoredWithExistingGlobalTracer() throws IOException {
+        writeServiceFile(TracerResolver.class, Mocks.MockTracerResolver.class);
+        writeServiceFile(TracerConverter.class, Mocks.IdentityConverter.class, Mocks.Prio5_ThrowingConverter.class);
+        GlobalTracer.register(new MockTracer());
+
+        assertThat("Resolved tracer", TracerResolver.resolveTracer(), is(sameInstance(GlobalTracer.get())));
+        assertThat("Called converter types", Mocks.calledConverterTypes, is(empty()));
+    }
 }

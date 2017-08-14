@@ -34,6 +34,7 @@
 
     <modules>
         <module>opentracing-tracerresolver</module>
+        <module>opentracing-tracerresolver-itest</module>
     </modules>
 
     <licenses>
@@ -57,9 +58,11 @@
         <mockito.version>1.10.19</mockito.version>
 
         <maven-compiler-plugin.version>3.6.2</maven-compiler-plugin.version>
+        <maven-failsafe-plugin.version>2.20</maven-failsafe-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
         <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
         <license-maven-plugin.version>3.0</license-maven-plugin.version>
+        <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
         <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
         <centralsync-maven-plugin.version>0.1.0</centralsync-maven-plugin.version>
     </properties>

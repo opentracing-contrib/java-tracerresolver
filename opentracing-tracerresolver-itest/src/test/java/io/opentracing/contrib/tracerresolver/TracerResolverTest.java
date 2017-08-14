@@ -15,10 +15,7 @@
  */
 package io.opentracing.contrib.tracerresolver;
 
-import io.opentracing.NoopTracerFactory;
 import io.opentracing.Tracer;
-import io.opentracing.mock.MockTracer;
-import io.opentracing.util.GlobalTracer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,11 +24,17 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.fail;
 
+/**
+ * This test repeats the {@linkplain TracerResolver} unit-test, but without the <code>{@literal @}Priority</code>
+ * and {@code GlobalTracer} dependencies available on the classpath.
+ *
+ * @author Sjoerd Talsma
+ */
 public class TracerResolverTest {
     private static final File SERVICES_DIR = new File("target/test-classes/META-INF/services/");
 
@@ -47,12 +50,10 @@ public class TracerResolverTest {
         TracerResolver.reload();
     }
 
-    @Before
-    @After
-    public void clearGlobalTracer() throws NoSuchFieldException, IllegalAccessException {
-        Field globalTracer = GlobalTracer.class.getDeclaredField("tracer");
-        globalTracer.setAccessible(true);
-        globalTracer.set(null, NoopTracerFactory.create());
+    @Test(expected = ClassNotFoundException.class)
+    public void verifyGlobalTracerAbsence() throws ClassNotFoundException {
+        Class.forName("io.opentracing.util.GlobalTracer");
+        fail("GlobalTracer should not be on the classpath for this test.");
     }
 
     @Test
@@ -94,16 +95,8 @@ public class TracerResolverTest {
 
     @Test
     public void testSkipResolverThrowingException() throws IOException {
-        writeServiceFile(TracerResolver.class, Mocks.HighPriorityThrowingResolver.class, Mocks.MockTracerResolver.class);
+        writeServiceFile(TracerResolver.class, Mocks.ThrowingResolver.class, Mocks.MockTracerResolver.class);
         assertThat(TracerResolver.resolveTracer(), is(instanceOf(Mocks.ResolvedTracer.class)));
-    }
-
-    @Test
-    public void testResolveWithExistingGlobalTracer() throws IOException {
-        writeServiceFile(TracerResolver.class, Mocks.MockTracerResolver.class, Mocks.NullTracerResolver.class);
-        writeServiceFile(Tracer.class, Mocks.FallbackTracer.class);
-        GlobalTracer.register(new MockTracer());
-        assertThat(TracerResolver.resolveTracer(), is(sameInstance(GlobalTracer.get())));
     }
 
     static <SVC> void writeServiceFile(Class<SVC> service, Class<?>... implementations) throws IOException {
