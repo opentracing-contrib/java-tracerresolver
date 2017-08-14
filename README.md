@@ -41,6 +41,12 @@ The priority is applied as follows:
 
 The order of objects with equal (implicit) priority is undefined.
 
+## GlobalTracer
+
+If the [opentracing-util] library is detected and a [`GlobalTracer`][globaltracer] 
+is already-registered, the resolving mechanism will be disabled.
+In this case the [GlobalTracer] is always returned as-is, _without_ applying any converters.
+
 
   [ci-img]: https://img.shields.io/travis/opentracing-contrib/java-tracerresolver/master.svg
   [ci]: https://travis-ci.org/opentracing-contrib/java-tracerresolver
@@ -48,3 +54,5 @@ The order of objects with equal (implicit) priority is undefined.
   [maven]: http://search.maven.org/#search%7Cga%7C1%7Copentracing-tracerresolver
   [serviceloader]: http://download.java.net/java/jdk9/docs/api/java/util/ServiceLoader.html
   [priority]: http://docs.oracle.com/javaee/7/api/javax/annotation/Priority.html
+  [opentracing-util]: https://github.com/opentracing/opentracing-java/tree/master/opentracing-util
+  [globaltracer]: https://github.com/opentracing/opentracing-java/blob/master/opentracing-util/src/main/java/io/opentracing/util/GlobalTracer.java

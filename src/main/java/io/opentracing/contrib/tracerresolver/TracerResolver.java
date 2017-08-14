@@ -31,6 +31,9 @@ import static io.opentracing.contrib.tracerresolver.PriorityComparator.prioritiz
  * {@link ServiceLoader} lookup of the {@link Tracer} service itself.
  * <p>
  * Available {@link TracerConverter} implementations are applied to the resolved {@link Tracer} instance.
+ * <p>
+ * None of this happens if there is an existing {@code GlobalTracer} explicit registration.
+ * That will always be returned (as-is) by the resolver, if available.
  *
  * @author Sjoerd Talsma
  */
@@ -50,11 +53,22 @@ public abstract class TracerResolver {
     /**
      * Detects all {@link TracerResolver} service implementations and attempts to resolve a {@link Tracer}.
      * <p>
+     * If a {@code GlobalTracer} has been previously registered, it will be returned before attempting to resolve
+     * a {@linkplain Tracer} on our own.
+     * <p>
      * If there are more than one resolver, the first non-<code>null</code> resolved tracer is returned.
      *
      * @return The resolved Tracer or {@code null} if none was resolved.
      */
     public static Tracer resolveTracer() {
+        try { // Take care NOT to import GlobalTracer as it is an optional dependency and may not be on the classpath.
+            if (io.opentracing.util.GlobalTracer.isRegistered()) {
+                return logResolved(io.opentracing.util.GlobalTracer.get());
+            }
+        } catch (NoClassDefFoundError globalTracerNotInClasspath) {
+            LOGGER.finest("GlobalTracer is not found on the classpath.");
+        }
+
         for (TracerResolver resolver : prioritize(RESOLVERS)) {
             try {
                 Tracer tracer = convert(resolver.resolve());
