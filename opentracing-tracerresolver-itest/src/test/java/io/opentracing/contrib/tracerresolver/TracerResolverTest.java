@@ -99,6 +99,17 @@ public class TracerResolverTest {
         assertThat(TracerResolver.resolveTracer(), is(instanceOf(Mocks.ResolvedTracer.class)));
     }
 
+    @Test
+    public void testResolverDisabled() throws IOException {
+        try {
+            System.setProperty("tracerresolver.disabled", "true");
+            writeServiceFile(TracerResolver.class, Mocks.MockTracerResolver.class);
+            assertThat(TracerResolver.resolveTracer(), is(nullValue()));
+        } finally {
+            System.clearProperty("tracerresolver.disabled");
+        }
+    }
+
     static <SVC> void writeServiceFile(Class<SVC> service, Class<?>... implementations) throws IOException {
         SERVICES_DIR.mkdirs();
         File serviceFile = new File(SERVICES_DIR, service.getName());

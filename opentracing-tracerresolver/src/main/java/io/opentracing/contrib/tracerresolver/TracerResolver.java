@@ -69,20 +69,22 @@ public abstract class TracerResolver {
             LOGGER.finest("GlobalTracer is not found on the classpath.");
         }
 
-        for (TracerResolver resolver : prioritize(RESOLVERS)) {
-            try {
-                Tracer tracer = convert(resolver.resolve());
+        if (!TracerResolver.isDisabled()) {
+            for (TracerResolver resolver : prioritize(RESOLVERS)) {
+                try {
+                    Tracer tracer = convert(resolver.resolve());
+                    if (tracer != null) {
+                        return logResolved(tracer);
+                    }
+                } catch (RuntimeException rte) {
+                    LOGGER.log(Level.WARNING, "Error resolving tracer using " + resolver + ": " + rte.getMessage(), rte);
+                }
+            }
+            for (Tracer tracer : prioritize(FALLBACK)) {
+                tracer = convert(tracer);
                 if (tracer != null) {
                     return logResolved(tracer);
                 }
-            } catch (RuntimeException rte) {
-                LOGGER.log(Level.WARNING, "Error resolving tracer using " + resolver + ": " + rte.getMessage(), rte);
-            }
-        }
-        for (Tracer tracer : prioritize(FALLBACK)) {
-            tracer = convert(tracer);
-            if (tracer != null) {
-                return logResolved(tracer);
             }
         }
         LOGGER.log(Level.FINEST, "No tracer was resolved.");
@@ -97,6 +99,20 @@ public abstract class TracerResolver {
         CONVERTERS.reload();
         FALLBACK.reload();
         LOGGER.log(Level.FINER, "Tracer resolvers were reloaded.");
+    }
+
+    /**
+     * There are two ways to globally disable the tracer resolver:
+     * <ul>
+     * <li>Setting a {@code "tracerresolver.disabled"} system property to {@code true}</li>
+     * <li>Setting the environment variable {@code TRACERRESOLVER_DISABLED} to {@code true}</li>
+     * </ul>
+     *
+     * @return Whether the tracer resolver mechanism is disabled ({@code false} by default).
+     */
+    private static boolean isDisabled() {
+        String prop = System.getProperty("tracerresolver.disabled", System.getenv("TRACERRESOLVER_DISABLED"));
+        return prop != null && (prop.equals("1") || prop.equalsIgnoreCase("true"));
     }
 
     private static Tracer convert(Tracer resolved) {
