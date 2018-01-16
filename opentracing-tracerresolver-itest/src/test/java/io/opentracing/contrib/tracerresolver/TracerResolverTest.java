@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 The OpenTracing Authors
+ * Copyright 2017-2018 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public class TracerResolverTest {
     private static final File SERVICES_DIR = new File("target/test-classes/META-INF/services/");
 
     @After
-    public void cleanServiceFiles() throws IOException {
+    public void cleanServiceFiles() {
         new File(SERVICES_DIR, TracerResolver.class.getName()).delete();
         new File(SERVICES_DIR, Tracer.class.getName()).delete();
     }
@@ -57,7 +57,7 @@ public class TracerResolverTest {
     }
 
     @Test
-    public void testNothingRegistered() throws IOException {
+    public void testNothingRegistered() {
         assertThat(TracerResolver.resolveTracer(), is(nullValue()));
     }
 

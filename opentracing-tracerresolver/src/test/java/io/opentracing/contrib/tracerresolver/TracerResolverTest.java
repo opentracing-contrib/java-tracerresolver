@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 The OpenTracing Authors
+ * Copyright 2017-2018 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package io.opentracing.contrib.tracerresolver;
 
-import io.opentracing.NoopTracerFactory;
 import io.opentracing.Tracer;
 import io.opentracing.mock.MockTracer;
 import io.opentracing.util.GlobalTracer;
+import io.opentracing.util.GlobalTracerTestUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -36,7 +35,7 @@ public class TracerResolverTest {
     private static final File SERVICES_DIR = new File("target/test-classes/META-INF/services/");
 
     @After
-    public void cleanServiceFiles() throws IOException {
+    public void cleanServiceFiles() {
         new File(SERVICES_DIR, TracerResolver.class.getName()).delete();
         new File(SERVICES_DIR, Tracer.class.getName()).delete();
     }
@@ -49,14 +48,12 @@ public class TracerResolverTest {
 
     @Before
     @After
-    public void clearGlobalTracer() throws NoSuchFieldException, IllegalAccessException {
-        Field globalTracer = GlobalTracer.class.getDeclaredField("tracer");
-        globalTracer.setAccessible(true);
-        globalTracer.set(null, NoopTracerFactory.create());
+    public void clearGlobalTracer() {
+        GlobalTracerTestUtil.resetGlobalTracer();
     }
 
     @Test
-    public void testNothingRegistered() throws IOException {
+    public void testNothingRegistered() {
         assertThat(TracerResolver.resolveTracer(), is(nullValue()));
     }
 

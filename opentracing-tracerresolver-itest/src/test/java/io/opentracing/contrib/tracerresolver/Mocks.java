@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 The OpenTracing Authors
+ * Copyright 2017-2018 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,11 @@
  */
 package io.opentracing.contrib.tracerresolver;
 
+import io.opentracing.ScopeManager;
+import io.opentracing.Span;
+import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
-import io.opentracing.mock.MockTracer;
+import io.opentracing.propagation.Format;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,10 +27,10 @@ import java.util.List;
 public final class Mocks {
     static final List<Class<?>> calledConverterTypes = new ArrayList<Class<?>>();
 
-    public static class FallbackTracer extends MockTracer {
+    public static class FallbackTracer extends UnimplementedTracer {
     }
 
-    public static class ResolvedTracer extends MockTracer {
+    public static class ResolvedTracer extends UnimplementedTracer {
     }
 
     public static class MockTracerResolver extends TracerResolver {
@@ -75,4 +78,33 @@ public final class Mocks {
         }
     }
 
+    /**
+     * Unimplemented tracer because we don't actually use these mock tracers.
+     * Their purpose is merely verifying what is being resolved.
+     */
+    private static abstract class UnimplementedTracer implements Tracer {
+        @Override
+        public ScopeManager scopeManager() {
+            return null;
+        }
+
+        @Override
+        public Span activeSpan() {
+            return null;
+        }
+
+        @Override
+        public SpanBuilder buildSpan(String operationName) {
+            return null;
+        }
+
+        @Override
+        public <C> void inject(SpanContext spanContext, Format<C> format, C carrier) {
+        }
+
+        @Override
+        public <C> SpanContext extract(Format<C> format, C carrier) {
+            return null;
+        }
+    }
 }
