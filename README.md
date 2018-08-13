@@ -9,16 +9,23 @@ This responsibility should be handled by the application, possibly using some ru
 Tracer `@Bean` in Spring Boot, or a CDI producer).
 Framework integrations used to instrument specific technologies should **not** use this library, but should allow a Tracer to be injected instead, with fallback to the GlobalTracer.
 
-## TracerResolver
+## Tracer resolver
 
-This is both an abstract Service definition declaring a `resolve()` method to be implemented
-and a utility class providing a static `resolveTracer()` method using the [JDK ServiceLoader][serviceloader]
-to find declared `TracerResolver` implementations to resolve a Tracer.
+This is a utility class providing a static `resolveTracer()` method using 
+the [JDK ServiceLoader][serviceloader] to find declared `TracerFactory` implementations 
+providing a Tracer.
+
+## Tracer factory
+
+A tracer factory implements a `getTracer()` method and is used by the `TracerResolver`
+to look up tracer implementations via a [JDK ServiceLoader][serviceloader].
 
 ## Fallback lookup
 
-If no `TracerResolver` is found or no `Tracer` is returned, a [ServiceLoader lookup][serviceloader] for a declared 
-`Tracer` class is used as _fallback_.
+If no `TracerFactory` is found or no `Tracer` is returned, 
+a [ServiceLoader lookup][serviceloader] for a declared concrete `TracerResolver` class is used.
+This supports the 'legacy' lookup for TracerResolver subclasses providing a `resolve()` implementation.
+Finally, if this also fails, the `Tracer` class is used as last-resort lookup.
 
 ## Tracer converters
 
