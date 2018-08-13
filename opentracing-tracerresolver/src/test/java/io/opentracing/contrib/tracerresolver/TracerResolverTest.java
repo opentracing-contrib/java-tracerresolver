@@ -37,6 +37,7 @@ public class TracerResolverTest {
     @After
     public void cleanServiceFiles() {
         new File(SERVICES_DIR, TracerResolver.class.getName()).delete();
+        new File(SERVICES_DIR, TracerFactory.class.getName()).delete();
         new File(SERVICES_DIR, Tracer.class.getName()).delete();
     }
 
@@ -101,6 +102,19 @@ public class TracerResolverTest {
         writeServiceFile(Tracer.class, Mocks.FallbackTracer.class);
         GlobalTracer.register(new MockTracer());
         assertThat(TracerResolver.resolveTracer(), is(sameInstance(GlobalTracer.get())));
+    }
+
+    @Test
+    public void testResolveFromFactory() throws IOException {
+        writeServiceFile(TracerFactory.class, Mocks.Prio0_TracerFactory.class);
+        assertThat(TracerResolver.resolveTracer(), is(instanceOf(Mocks.ResolvedTracerFromFactory.class)));
+    }
+
+    @Test
+    public void testResolveFromFactoryHasHigherPriorityThanResolver() throws IOException {
+        writeServiceFile(TracerFactory.class, Mocks.Prio0_TracerFactory.class);
+        writeServiceFile(TracerResolver.class, Mocks.Prio1_TracerResolver.class);
+        assertThat(TracerResolver.resolveTracer(), is(instanceOf(Mocks.ResolvedTracerFromFactory.class)));
     }
 
     @Test

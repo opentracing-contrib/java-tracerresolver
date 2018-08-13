@@ -44,16 +44,33 @@ public abstract class TracerResolver {
      * Resolves the {@link Tracer} implementation.
      *
      * @return The resolved Tracer or {@code null} if none was resolved.
+     * @deprecated Tracers are encouraged to use the {@link TracerFactory} interface to provide tracers
      */
+    @Deprecated
     protected abstract Tracer resolve();
 
     /**
-     * Detects all {@link TracerResolver} service implementations and attempts to resolve a {@link Tracer}.
+     * Attempts to resolve a Tracer via {@link ServiceLoader} using a variety of mechanisms, from the most recommended
+     * to the least recommended:
+     * <p>
+     * <ul>
+     *     <li>based on the available {@link TracerFactory}</li>
+     *     <li>based on subclasses of {@link TracerResolver}</li>
+     *     <li>based on classes of {@link Tracer}</li>
+     * </ul>
+     *
+     * <p>
+     * Whenever a Tracer can be resolved by any of the methods above, the resolution stops. It means that if a Factory
+     * is found, no Resolvers are attempted to be loaded.
+     *
      * <p>
      * If a {@code GlobalTracer} has been previously registered, it will be returned before attempting to resolve
      * a {@linkplain Tracer} on our own.
+     *
      * <p>
-     * If there are more than one resolver, the first non-<code>null</code> resolved tracer is returned.
+     * If more than one {@link TracerFactory} or {@link TracerResolver} is found, the one with the highest priority is
+     * returned. Note that if a {@link TracerResolver} has a higher priority than all available {@link TracerFactory},
+     * the factory still wins.
      *
      * @return The resolved Tracer or {@code null} if none was resolved.
      */
@@ -66,26 +83,19 @@ public abstract class TracerResolver {
             LOGGER.finest("GlobalTracer is not found on the classpath.");
         }
 
+        Tracer tracer = null;
         if (!TracerResolver.isDisabled()) {
-            for (TracerResolver resolver : prioritize(ServiceLoader.load(TracerResolver.class))) {
-                try {
-                    Tracer tracer = convert(resolver.resolve());
-                    if (tracer != null) {
-                        return logResolved(tracer);
-                    }
-                } catch (RuntimeException rte) {
-                    LOGGER.log(Level.WARNING, "Error resolving tracer using " + resolver + ": " + rte.getMessage(), rte);
-                }
+            tracer = getFromFactory();
+            if (null == tracer) {
+                tracer = getFromResolver();
             }
-            for (Tracer tracer : prioritize(ServiceLoader.load(Tracer.class))) {
-                tracer = convert(tracer);
-                if (tracer != null) {
-                    return logResolved(tracer);
-                }
+
+            if (null == tracer) {
+                tracer = getFromServiceLoader();
             }
         }
-        LOGGER.log(Level.FINEST, "No tracer was resolved.");
-        return null;
+
+        return tracer;
     }
 
     /**
@@ -131,6 +141,61 @@ public abstract class TracerResolver {
     private static Tracer logResolved(Tracer resolvedTracer) {
         LOGGER.log(Level.FINER, "Resolved tracer: {0}.", resolvedTracer);
         return resolvedTracer;
+    }
+
+    /**
+     * Attempts to load a Tracer based on the {@link TracerFactory} interface. This is the preferred way to load a tracer
+     * @return a tracer as resolved by the classpath's TracerFactory, or null
+     */
+    private static Tracer getFromFactory() {
+        for (TracerFactory factory : prioritize(ServiceLoader.load(TracerFactory.class))) {
+            try {
+                Tracer tracer = convert(factory.getTracer());
+                if (tracer != null) {
+                    return logResolved(tracer);
+                }
+            } catch (RuntimeException rte) {
+                LOGGER.log(Level.WARNING, "Error getting tracer using " + factory + ": " + rte.getMessage(), rte);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Attempts to load a Tracer based on the TracerResolver class. This is the deprecated behavior and is kept here
+     * for backwards compatibility reasons.
+     *
+     * @return a tracer from {@link #resolve()}, or null
+     */
+    private static Tracer getFromResolver() {
+        for (TracerResolver resolver : prioritize(ServiceLoader.load(TracerResolver.class))) {
+            try {
+                Tracer tracer = convert(resolver.resolve());
+                if (tracer != null) {
+                    return logResolved(tracer);
+                }
+            } catch (RuntimeException rte) {
+                LOGGER.log(Level.WARNING, "Error resolving tracer using " + resolver + ": " + rte.getMessage(), rte);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Attempts to load a Tracer directly from the ServiceLoader.
+     * @return a tracer as resolved directly by the service loader, or null
+     */
+    private static Tracer getFromServiceLoader() {
+        for (Tracer tracer : prioritize(ServiceLoader.load(Tracer.class))) {
+            tracer = convert(tracer);
+            if (tracer != null) {
+                return logResolved(tracer);
+            }
+        }
+
+        return null;
     }
 
 }

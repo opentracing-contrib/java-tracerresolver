@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 The OpenTracing Authors
+ * Copyright 2017-2018 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,9 @@ public final class Mocks {
     }
 
     public static class ResolvedTracer extends MockTracer {
+    }
+
+    public static class ResolvedTracerFromFactory extends MockTracer {
     }
 
     public static class MockTracerResolver extends TracerResolver {
@@ -79,4 +82,19 @@ public final class Mocks {
         }
     }
 
+    @Priority(0)
+    public static class Prio0_TracerFactory implements TracerFactory {
+        @Override
+        public Tracer getTracer() {
+            return new ResolvedTracerFromFactory();
+        }
+    }
+
+    @Priority(1)
+    public static class Prio1_TracerResolver extends TracerResolver {
+        @Override
+        protected Tracer resolve() {
+            return new ResolvedTracer();
+        }
+    }
 }
