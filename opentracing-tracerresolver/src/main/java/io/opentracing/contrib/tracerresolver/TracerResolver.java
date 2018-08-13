@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 The OpenTracing Authors
+ * Copyright 2017-2018 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,6 @@ import static io.opentracing.contrib.tracerresolver.PriorityComparator.prioritiz
  */
 public abstract class TracerResolver {
     private static final Logger LOGGER = Logger.getLogger(TracerResolver.class.getName());
-    private static final ServiceLoader<TracerResolver> RESOLVERS = ServiceLoader.load(TracerResolver.class);
-    private static final ServiceLoader<TracerConverter> CONVERTERS = ServiceLoader.load(TracerConverter.class);
-    private static final ServiceLoader<Tracer> FALLBACK = ServiceLoader.load(Tracer.class);
 
     /**
      * Resolves the {@link Tracer} implementation.
@@ -70,7 +67,7 @@ public abstract class TracerResolver {
         }
 
         if (!TracerResolver.isDisabled()) {
-            for (TracerResolver resolver : prioritize(RESOLVERS)) {
+            for (TracerResolver resolver : prioritize(ServiceLoader.load(TracerResolver.class))) {
                 try {
                     Tracer tracer = convert(resolver.resolve());
                     if (tracer != null) {
@@ -80,7 +77,7 @@ public abstract class TracerResolver {
                     LOGGER.log(Level.WARNING, "Error resolving tracer using " + resolver + ": " + rte.getMessage(), rte);
                 }
             }
-            for (Tracer tracer : prioritize(FALLBACK)) {
+            for (Tracer tracer : prioritize(ServiceLoader.load(Tracer.class))) {
                 tracer = convert(tracer);
                 if (tracer != null) {
                     return logResolved(tracer);
@@ -93,12 +90,12 @@ public abstract class TracerResolver {
 
     /**
      * Reloads the lazily found {@linkplain TracerResolver resolvers} and the fallback resolver.
+     *
+     * @deprecated This method is now no-op. It's safe to just remove this method call, as there's no caching anymore.
      */
+    @Deprecated
     public static void reload() {
-        RESOLVERS.reload();
-        CONVERTERS.reload();
-        FALLBACK.reload();
-        LOGGER.log(Level.FINER, "Tracer resolvers were reloaded.");
+        LOGGER.log(Level.FINER, "No-op for this implementation.");
     }
 
     /**
@@ -117,7 +114,7 @@ public abstract class TracerResolver {
 
     private static Tracer convert(Tracer resolved) {
         if (resolved != null) {
-            for (TracerConverter converter : prioritize(CONVERTERS)) {
+            for (TracerConverter converter : prioritize(ServiceLoader.load(TracerConverter.class))) {
                 try {
                     Tracer converted = converter.convert(resolved);
                     LOGGER.log(Level.FINEST, "Converted {0} using {1}: {2}.", new Object[]{resolved, converter, converted});
