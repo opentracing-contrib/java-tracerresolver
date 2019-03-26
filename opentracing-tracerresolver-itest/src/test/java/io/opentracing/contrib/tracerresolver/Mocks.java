@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 The OpenTracing Authors
+ * Copyright 2017-2019 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.opentracing.contrib.tracerresolver;
 
+import io.opentracing.Scope;
 import io.opentracing.ScopeManager;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -94,6 +95,11 @@ public final class Mocks {
         }
 
         @Override
+        public Scope activateSpan(Span span) {
+            return null;
+        }
+
+        @Override
         public SpanBuilder buildSpan(String operationName) {
             return null;
         }
@@ -105,6 +111,9 @@ public final class Mocks {
         @Override
         public <C> SpanContext extract(Format<C> format, C carrier) {
             return null;
+        }
+
+        public void close() {
         }
     }
 }

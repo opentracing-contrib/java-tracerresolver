@@ -72,6 +72,18 @@
                         </goals>
                     </execution>
                 </executions>
+                <dependencies> <!-- No longer available for jdk>=9 -->
+                    <dependency>
+                        <groupId>com.sun.xml.bind</groupId>
+                        <artifactId>jaxb-impl</artifactId>
+                        <version>2.2.7</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>javax.activation</groupId>
+                        <artifactId>javax.activation-api</artifactId>
+                        <version>1.2.0</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -83,5 +95,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
