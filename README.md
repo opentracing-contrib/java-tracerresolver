@@ -48,7 +48,7 @@ on their class or superclasses.
 The priority is applied as follows:
  1. First, non-negative priority is applied in natural order (e.g. `0`, `1`, `2`, ...).
  2. Next, objects without [`@Priority`][priority] annotation are applied
-    by assigning a _default priority_ of `Integer#MAX_VALUE`.
+    by assigning a _default priority_ of `Integer.MAX_VALUE`.
  3. Finally, negative priority is applied in reverse-natural order (e.g. `-1`, `-2`, `-3`, ...).
 
 The order of objects with equal (implicit) priority is undefined.
