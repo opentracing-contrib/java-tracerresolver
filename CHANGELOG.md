@@ -1,5 +1,9 @@
 # Changes by Version
 
+## v0.1.7 (2019-05-07)
+* Update to OpenTracing API 0.33.0 
+  ([#38](https://github.com/opentracing-contrib/java-tracerresolver/pull/38))
+
 ## v0.1.6 (2019-03-26)
 * Update to OpenTracing API 0.32.0 
   ([#36](https://github.com/opentracing-contrib/java-tracerresolver/pull/36))
