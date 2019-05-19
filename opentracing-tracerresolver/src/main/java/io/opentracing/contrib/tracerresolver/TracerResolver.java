@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 The OpenTracing Authors
+ * Copyright 2017-2019 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ public abstract class TracerResolver {
     @Deprecated
     protected abstract Tracer resolve();
 
+    
     /**
      * Attempts to resolve a Tracer via {@link ServiceLoader} using a variety of mechanisms, from the most recommended
      * to the least recommended:
@@ -75,6 +76,37 @@ public abstract class TracerResolver {
      * @return The resolved Tracer or {@code null} if none was resolved.
      */
     public static Tracer resolveTracer() {
+    	return resolveTracer(null);
+    }
+    
+    /**
+     * Attempts to resolve a Tracer via {@link ServiceLoader} using a variety of mechanisms, from the most recommended
+     * to the least recommended:
+     * <p>
+     * <ul>
+     *     <li>based on the available {@link TracerFactory}</li>
+     *     <li>based on subclasses of {@link TracerResolver}</li>
+     *     <li>based on classes of {@link Tracer}</li>
+     * </ul>
+     *
+     * <p>
+     * Whenever a Tracer can be resolved by any of the methods above, the resolution stops. It means that if a Factory
+     * is found, no Resolvers are attempted to be loaded.
+     *
+     * <p>
+     * If a {@code GlobalTracer} has been previously registered, it will be returned before attempting to resolve
+     * a {@linkplain Tracer} on our own.
+     *
+     * <p>
+     * If more than one {@link TracerFactory} or {@link TracerResolver} is found, the one with the highest priority is
+     * returned. Note that if a {@link TracerResolver} has a higher priority than all available {@link TracerFactory},
+     * the factory still wins.
+     *
+     * @param classloader The class loader to be used to load provider-configuration files
+     *     and provider classes, or null if the thread context class loader to be used.
+     * @return The resolved Tracer or {@code null} if none was resolved.
+     */
+    public static Tracer resolveTracer(ClassLoader classloader) {
         try { // Take care NOT to import GlobalTracer as it is an optional dependency and may not be on the classpath.
             if (io.opentracing.util.GlobalTracer.isRegistered()) {
                 return logResolved(io.opentracing.util.GlobalTracer.get());
@@ -85,13 +117,16 @@ public abstract class TracerResolver {
 
         Tracer tracer = null;
         if (!TracerResolver.isDisabled()) {
-            tracer = getFromFactory();
+            if (classloader == null) {
+                classloader = Thread.currentThread().getContextClassLoader();
+            }
+            tracer = getFromFactory(classloader);
             if (null == tracer) {
-                tracer = getFromResolver();
+                tracer = getFromResolver(classloader);
             }
 
             if (null == tracer) {
-                tracer = getFromServiceLoader();
+                tracer = getFromServiceLoader(classloader);
             }
         }
 
@@ -145,10 +180,12 @@ public abstract class TracerResolver {
 
     /**
      * Attempts to load a Tracer based on the {@link TracerFactory} interface. This is the preferred way to load a tracer
+     * @param classloader The class loader to be used to load provider-configuration files
+     *     and provider classes
      * @return a tracer as resolved by the classpath's TracerFactory, or null
      */
-    private static Tracer getFromFactory() {
-        for (TracerFactory factory : prioritize(ServiceLoader.load(TracerFactory.class))) {
+    private static Tracer getFromFactory(ClassLoader classloader) {
+        for (TracerFactory factory : prioritize(ServiceLoader.load(TracerFactory.class, classloader))) {
             try {
                 Tracer tracer = convert(factory.getTracer());
                 if (tracer != null) {
@@ -166,10 +203,12 @@ public abstract class TracerResolver {
      * Attempts to load a Tracer based on the TracerResolver class. This is the deprecated behavior and is kept here
      * for backwards compatibility reasons.
      *
+     * @param classloader The class loader to be used to load provider-configuration files
+     *     and provider classes
      * @return a tracer from {@link #resolve()}, or null
      */
-    private static Tracer getFromResolver() {
-        for (TracerResolver resolver : prioritize(ServiceLoader.load(TracerResolver.class))) {
+    private static Tracer getFromResolver(ClassLoader classloader) {
+        for (TracerResolver resolver : prioritize(ServiceLoader.load(TracerResolver.class, classloader))) {
             try {
                 Tracer tracer = convert(resolver.resolve());
                 if (tracer != null) {
@@ -185,10 +224,13 @@ public abstract class TracerResolver {
 
     /**
      * Attempts to load a Tracer directly from the ServiceLoader.
+     * 
+     * @param classloader The class loader to be used to load provider-configuration files
+     *     and provider classes
      * @return a tracer as resolved directly by the service loader, or null
      */
-    private static Tracer getFromServiceLoader() {
-        for (Tracer tracer : prioritize(ServiceLoader.load(Tracer.class))) {
+    private static Tracer getFromServiceLoader(ClassLoader classloader) {
+        for (Tracer tracer : prioritize(ServiceLoader.load(Tracer.class, classloader))) {
             tracer = convert(tracer);
             if (tracer != null) {
                 return logResolved(tracer);
