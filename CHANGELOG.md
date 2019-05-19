@@ -1,5 +1,9 @@
 # Changes by Version
 
+## next
+* Add a ClassLoader parameter to resolveTracer
+  ([#39](https://github.com/opentracing-contrib/java-tracerresolver/pull/39))
+
 ## v0.1.7 (2019-05-07)
 * Update to OpenTracing API 0.33.0 
   ([#38](https://github.com/opentracing-contrib/java-tracerresolver/pull/38))
