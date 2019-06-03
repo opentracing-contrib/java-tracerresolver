@@ -1,6 +1,6 @@
 # Changes by Version
 
-## next
+## v0.1.8 (2019-06-03)
 * Add a ClassLoader parameter to resolveTracer
   ([#39](https://github.com/opentracing-contrib/java-tracerresolver/pull/39))
 * Add Automatic-Module-Name to manifest
