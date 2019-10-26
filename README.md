@@ -64,7 +64,7 @@ In this case the [GlobalTracer] is always returned as-is, _without_ applying any
   [ci]: https://travis-ci.org/opentracing-contrib/java-tracerresolver
   [maven-img]: https://img.shields.io/maven-central/v/io.opentracing.contrib/opentracing-tracerresolver.svg
   [maven]: http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22opentracing-tracerresolver%22
-  [serviceloader]: http://download.java.net/java/jdk9/docs/api/java/util/ServiceLoader.html
+  [serviceloader]: https://docs.oracle.com/javase/9/docs/api/java/util/ServiceLoader.html
   [priority]: http://docs.oracle.com/javaee/7/api/javax/annotation/Priority.html
   [opentracing-util]: https://github.com/opentracing/opentracing-java/tree/master/opentracing-util
   [globaltracer]: https://github.com/opentracing/opentracing-java/blob/master/opentracing-util/src/main/java/io/opentracing/util/GlobalTracer.java
